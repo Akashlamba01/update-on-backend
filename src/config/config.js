@@ -5,7 +5,7 @@ export const config = {
   port: process.env.PORT || 8001,
   dbURI: process.env.MONGODB_URI,
   dbURILocal: process.env.MONGODB_URI_LOCAL,
-  // corsOrigin: process.env.CORS_ORIGIN,
+  corsOrigin: process.env.CORS_ORIGIN,
 
   secretKeyJWT: process.env.ACCESS_TOKEN_SECRET,
   secretExpiryJWT: process.env.ACCESS_TOKEN_EXPIRY,
