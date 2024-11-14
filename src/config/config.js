@@ -1,9 +1,9 @@
-// import dotenv from "dotenv"
-// dotenv.config({ path: "../../env" })
+import dotenv from "dotenv"
+dotenv.config()
 
 export const config = {
   port: process.env.PORT || 8001,
-  dbURI: process.env.MONGODB_URI,
+  DB_URI: process.env.MONGODB_URI,
   dbURILocal: process.env.MONGODB_URI_LOCAL,
   corsOrigin: process.env.CORS_ORIGIN,
 

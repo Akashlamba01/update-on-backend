@@ -1,1 +1,1 @@
-export const DB_NAME = "Yumme-Backend"
+export const DB_NAME = "yumme-v2"
