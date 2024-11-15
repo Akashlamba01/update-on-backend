@@ -4,7 +4,7 @@ import { config } from "../config/config.js"
 
 const connectDB = async () => {
   try {
-    console.log(config.DB_URI, "db")
+    // console.log(config.DB_URI, "db")
     const connectionInstence = await mongoose.connect(
       `${config.DB_URI}/${DB_NAME}`
     )

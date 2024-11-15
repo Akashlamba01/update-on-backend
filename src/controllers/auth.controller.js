@@ -1,70 +1,60 @@
 import { User } from "../models/user.model.js"
 import ApiResponse from "../utils/api.responses.js"
 import { genratorToken } from "../utils/token.genrate.js"
-import { genrateOtp } from "../utils/helper.js"
-import Sequence from "../models/sequence.handler.model.js"
+import { compairCode, genratorOTP, hashCode } from "../utils/helper.js"
+// import Sequence from "../models/sequence.handler.model.js"
 
 const create = async (req, res) => {
   try {
-    let user = await User.findOne({
-      email: req.body.email,
-      role: req.body.role,
-    }).lean(true)
+    const { email, password, role } = req.body
 
-    if (user && user.isVerified == true) {
+    const user = await User.findOne({ email, role }).lean(true)
+
+    if (user && user.isVerified) {
       return ApiResponse.taken(res, "User Already Exists!")
     }
 
-    req.body.accessToken = genratorToken.genratorAccessToken({ email })
-
-    req.body.location = {
-      type: "Point",
-      coordinates: [Number(78.088), Number(27.8974)],
-    }
-
-    // genrateOtp
-    const OTP = 123456
-
-    //sendgrid service for mail send
-    // mailService.sendMail(req.body.email, OTP);
-
-    req.body.verificationCode = md5(OTP)
-    req.body.password = md5(req.body.password)
-
-    await Sequence.findOneAndUpdate(
-      {},
-      {
-        $inc: { [req.body.role]: +1 },
-      },
-      { new: true }
-    )
+    const accessToken = genratorToken.genratorAccessToken({ email, role })
+    const OTP = genratorOTP()
+    const verificationCode = await hashCode(OTP)
+    const hashedPassword = await hashCode(password)
 
     let newUser = {}
     if (user && user.isVerified === false) {
-      newUser = await User.findOneAndUpdate(
+      newUser = await User.updateOne(
+        { email, role },
         {
-          email: req.body.email,
-          role: req.body.role,
+          $set: {
+            accessToken,
+            verificationCode,
+            password: hashedPassword,
+          },
         },
-        req.body,
         {
           new: true,
         }
       )
     } else {
+      req.body.accessToken = accessToken
+      req.body.verificationCode = verificationCode
+      req.body.password = hashedPassword
+
       newUser = await User.create(req.body)
     }
 
-    return ApiResponse.successOk(res, newUser)
+    return ApiResponse.successCreate(res, { accessToken })
   } catch (error) {
+    console.error(error)
     return ApiResponse.fail(res)
   }
 }
 
-const sendOtp = async (req, res) => {
+const otpSend = async (req, res) => {
   try {
     // genrate otp
-    const OTP = 123456
+    // const OTP =
+    const OTP = genratorOTP()
+    const hashedCode = await hashCode(OTP)
     // sent to email
 
     const isUser = await User.findOneAndUpdate(
@@ -74,7 +64,7 @@ const sendOtp = async (req, res) => {
       },
       {
         $set: {
-          verificationCode: md5(OTP),
+          verificationCode: hashedCode,
         },
       },
       {
@@ -88,8 +78,64 @@ const sendOtp = async (req, res) => {
 
     return ApiResponse.successOk(res, "OTP Sent Successfully!")
   } catch (error) {
+    console.error(error)
     return ApiResponse.fail(res)
   }
 }
 
-export { create, sendOtp }
+const otpVerify = async (req, res) => {
+  try {
+    const { email, OTP, role } = req.body
+    const user = await User.findOne({ email, role }).lean()
+
+    if (!user || !user.verificationCode) {
+      return ApiResponse.unknown(res, "Invalid OTP!")
+    }
+
+    const isValidCode = await compairCode(OTP, user.verificationCode)
+
+    if (!isValidCode) {
+      return ApiResponse.unknown(res, "Invalid OTP!")
+    }
+
+    const accessToken = genratorToken.genratorAccessToken({ email, role })
+
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { accessToken, verificationCode: "", isVerified: true } }
+    )
+
+    return ApiResponse.successOk(res, "Otp Verified Successfully!")
+  } catch (error) {
+    console.error(error)
+    return ApiResponse.fail(res)
+  }
+}
+
+const foretPassword = async (req, res) => {
+  try {
+    const { email, role, password } = req.body
+    const user = await User.findOne({ email, role }).lean()
+
+    if (!user || !user.isVerified)
+      return ApiResponse.notFound(res, "User Not Found!")
+
+    const newPassword = await hashCode(password)
+    const accessToken = genratorToken({ email, role })
+
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { password: newPassword, accessToken } },
+      { new: true }
+    )
+
+    return ApiResponse.successOk(res, "Password Reset Successfully!", {
+      accessToken,
+    })
+  } catch (error) {
+    console.error(error)
+    return ApiResponse.fail(res)
+  }
+}
+
+export { create, otpSend, otpVerify, foretPassword }

@@ -1,4 +1,6 @@
 import mongoose from "mongoose"
+import { hashCode } from "../utils/helper.js"
+import { genratorToken } from "../utils/token.genrate.js"
 
 const userScheme = new mongoose.Schema(
   {
@@ -96,44 +98,36 @@ const userScheme = new mongoose.Schema(
   }
 )
 
+userScheme.index({ email: 1, role: 1 })
+
 const User = mongoose.model("User", userScheme)
-await User.findOne({
-  role: "admin",
-}).then((res) => {
-  if (!res) {
-    User.create({
-      email: "admin@gmail.com",
-      password: "25d55ad283aa400af464c76d713c07ad", //12345678
-      role: "admin",
-      accessToken: jwt.sign(
-        {
-          email: "admin@gmail.com",
-        },
-        "supersecret"
-      ),
-      location: {
-        type: "Point",
-        coordinates: [0, 0],
-      },
-      isVerified: true,
-    })
-    User.create({
-      email: "tester@gmail.com",
-      password: "25d55ad283aa400af464c76d713c07ad", //12345678
-      role: "admin",
-      accessToken: jwt.sign(
-        {
-          email: "admin@gmail.com",
-        },
-        "supersecret"
-      ),
-      location: {
-        type: "Point",
-        coordinates: [0, 0],
-      },
-      isVerified: true,
-    })
-  }
-})
+// await User.findOne({
+//   role: "admin",
+// }).then((res) => {
+//   if (!res) {
+//     User.create({
+//       email: "admin@gmail.com",
+//       password: hashCode(12345678), //12345678
+//       role: "admin",
+//       accessToken: genratorToken.genratorAccessToken({ email }),
+//       location: {
+//         type: "Point",
+//         coordinates: [0, 0],
+//       },
+//       isVerified: true,
+//     })
+//     User.create({
+//       email: "tester@gmail.com",
+//       password: hashCode(12345678), //12345678
+//       role: "admin",
+//       accessToken: genratorToken.genratorAccessToken({ email }),
+//       location: {
+//         type: "Point",
+//         coordinates: [0, 0],
+//       },
+//       isVerified: true,
+//     })
+//   }
+// })
 
 export { User }

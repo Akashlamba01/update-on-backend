@@ -1,11 +1,16 @@
-function genrateOtp(len) {
-  let otp = ""
-  let digits = "0123456789"
+import bcrypt from "bcrypt"
 
-  while (otp.length <= len) {
-    otp += digits[Math.floor(Math.random() * 10)]
-  }
-  return Number(otp)
+const genratorOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000) // Generates a 6-digit number
 }
 
-export { genrateOtp }
+const hashCode = async (txt) => {
+  const saltRounds = 10 // Salt rounds for hashing
+  return await bcrypt.hash(txt, saltRounds)
+}
+
+const compairCode = async (txt, hashed) => {
+  return await bcrypt.compare(txt, hashed)
+}
+
+export { genratorOTP, hashCode, compairCode }

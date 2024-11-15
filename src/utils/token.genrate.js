@@ -3,15 +3,9 @@ import jwt from "jsonwebtoken"
 
 const genratorToken = {
   genratorAccessToken: function (user) {
-    return jwt.sign(
-      {
-        //user details
-      },
-      config.secretKeyJWT,
-      {
-        expiresIn: config.secretExpiryJWT,
-      }
-    )
+    return jwt.sign(user, config.secretKeyJWT, {
+      expiresIn: config.secretExpiryJWT,
+    })
   },
 
   genratorRefreshToken: function (userId) {

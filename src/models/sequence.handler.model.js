@@ -1,4 +1,4 @@
-const mongoose = require("mongoose")
+import mongoose from "mongoose"
 const sequenceSchema = new mongoose.Schema(
   {
     user: {
@@ -29,4 +29,4 @@ Sequence.findOne({}).then((res) => {
       restaurant: 0,
     })
 })
-module.exports = Sequence
+export default Sequence
