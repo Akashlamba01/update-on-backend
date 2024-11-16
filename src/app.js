@@ -3,6 +3,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 import { config } from "./config/config.js"
 import mainRoutes from "./routes/index.js"
+import { errors } from "celebrate"
 
 const app = express()
 
@@ -23,5 +24,6 @@ app.get("/", (req, res) => {
 app.use("/api", mainRoutes)
 // import userRoutes from "./routes/user.routes.js"
 // app.use("/api/v1/users", userRoutes)
+app.use(errors())
 
 export { app }

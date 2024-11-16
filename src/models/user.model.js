@@ -52,12 +52,12 @@ const userScheme = new mongoose.Schema(
       type: String,
       default: "",
     },
-    address: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "address",
-      },
-    ],
+    // address: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "address",
+    //   },
+    // ],
     favoriteRestaurent: [
       {
         type: mongoose.Schema.Types.ObjectId,

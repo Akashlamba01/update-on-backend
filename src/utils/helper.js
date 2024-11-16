@@ -6,10 +6,16 @@ const genratorOTP = () => {
 
 const hashCode = async (txt) => {
   const saltRounds = 10 // Salt rounds for hashing
+  if (typeof txt != "string") {
+    txt = String(txt)
+  }
   return await bcrypt.hash(txt, saltRounds)
 }
 
 const compairCode = async (txt, hashed) => {
+  if (typeof txt != "string") {
+    txt = String(txt)
+  }
   return await bcrypt.compare(txt, hashed)
 }
 
