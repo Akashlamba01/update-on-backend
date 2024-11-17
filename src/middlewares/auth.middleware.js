@@ -27,4 +27,7 @@ const verifyJwt = async (req, res, next) => {
   }
 }
 
-export { verifyJwt }
+const decodeToken = (token) => {
+  return jwt.verify(token, config.refreshSecretJWT)
+}
+export { verifyJwt, decodeToken }

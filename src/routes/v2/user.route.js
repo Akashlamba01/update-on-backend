@@ -3,10 +3,12 @@ import { Joi, celebrate } from "celebrate"
 import {
   otpVerify,
   otpSend,
-  foretPassword,
-  create,
-  read,
-  update,
+  createUser,
+  loginUser,
+  getUser,
+  updateUser,
+  forgetPassword,
+  tokenRefresh,
 } from "../../controllers/auth.controller.js"
 import { verifyJwt } from "../../middlewares/auth.middleware.js"
 const router = express.Router()
@@ -25,25 +27,38 @@ router.route("/register").post(
       role: Joi.string().default("user"),
     }),
   }),
-  create
+  createUser
 )
 
-// router.route("/logoin").post()
+router.route("/login").post(
+  celebrate({
+    body: Joi.object().keys({
+      email: Joi.string().email().lowercase().required(),
+      role: Joi.string().default("user"),
+      password: Joi.string().required(),
+      lat: Joi.string().optional(),
+      long: Joi.string().optional(),
+    }),
+  }),
+  loginUser
+)
 
 router.route("/get-profile").post(
   celebrate({
-    body: Joi.string().default("user"),
+    body: Joi.object().keys({
+      role: Joi.string().default("user"),
+    }),
   }),
   verifyJwt,
-  read
+  getUser
 )
 
 router.route("/update-profile").post(
   celebrate({
     body: Joi.object().keys({
-      firstName: Joi.string().optional(),
-      lastName: Joi.string().optional(),
-      fullName: Joi.string().optional(),
+      firstName: Joi.string().lowercase().optional(),
+      lastName: Joi.string().lowercase().optional(),
+      fullName: Joi.string().lowercase().optional(),
       phoneNumber: Joi.string()
         .regex(/^[0-9]{8,15}$/)
         .optional(),
@@ -53,7 +68,17 @@ router.route("/update-profile").post(
     }),
   }),
   verifyJwt,
-  update
+  updateUser
+)
+
+router.route("/refresh-token").post(
+  celebrate({
+    body: Joi.object().keys({
+      role: Joi.string().default("user"),
+    }),
+  }),
+  verifyJwt,
+  tokenRefresh
 )
 
 router.route("/send-code").post(
@@ -89,7 +114,8 @@ router.route("/forget-password").post(
       confirmPassword: Joi.ref("password"),
     }),
   }),
-  foretPassword
+  verifyJwt,
+  forgetPassword
 )
 
 export default router

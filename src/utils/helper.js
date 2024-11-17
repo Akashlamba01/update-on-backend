@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt"
 
 const genratorOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000) // Generates a 6-digit number
+  return 123456 //only for development mode
+  // return Math.floor(100000 + Math.random() * 900000) // Generates a 6-digit number
 }
 
 const hashCode = async (txt) => {

@@ -1,13 +1,13 @@
 import mongoose from "mongoose"
-import { hashCode } from "../utils/helper.js"
-import { genratorToken } from "../utils/token.genrate.js"
+// import { hashCode } from "../utils/helper.js"
+// import { genratorToken } from "../utils/token.genrate.js"
 
 const userScheme = new mongoose.Schema(
   {
-    accessToken: {
-      type: String,
-      default: "",
-    },
+    // accessToken: {
+    //   type: String,
+    //   default: "",
+    // },
     refreshToken: {
       type: String,
       default: "",
@@ -47,6 +47,16 @@ const userScheme = new mongoose.Schema(
     avatar: {
       type: String,
       default: "",
+    },
+    lat: { type: String, default: "27.8974" },
+    long: { type: String, default: "78.0880" },
+    location: {
+      type: {
+        type: String,
+        default: "Point",
+      },
+      coordinates: [Number],
+      default: [0, 0],
     },
     password: {
       type: String,

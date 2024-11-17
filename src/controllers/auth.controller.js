@@ -1,10 +1,18 @@
 import { User } from "../models/user.model.js"
 import ApiResponse from "../utils/api.responses.js"
-import { genratorToken } from "../utils/token.genrate.js"
+import {
+  genratorAccessToken,
+  genratorRefreshToken,
+} from "../utils/token.genrate.js"
 import { compairCode, genratorOTP, hashCode } from "../utils/helper.js"
+// import Sesssion from "../models/session.model.js"
+import { decodeToken } from "../middlewares/auth.middleware.js"
 // import Sequence from "../models/sequence.handler.model.js"
 
-const create = async (req, res) => {
+//accessToken 15min
+//refreshToken 30d
+
+const createUser = async (req, res) => {
   try {
     const { email, password, role } = req.body
 
@@ -14,19 +22,18 @@ const create = async (req, res) => {
       return ApiResponse.taken(res, "User Already Exists!")
     }
 
-    const accessToken = genratorToken.genratorAccessToken(user)
+    // const accessToken = genratorToken.genratorAccessToken(user)
     const OTP = genratorOTP()
-    console.log("OPT", OTP)
     const verificationCode = await hashCode(OTP)
     const hashedPassword = await hashCode(password)
 
     let newUser = {}
     if (user && user.isVerified === false) {
-      newUser = await User.updateOne(
+      newUser = await User.findOneAndUpdate(
         { email, role },
         {
           $set: {
-            accessToken,
+            // accessToken,
             verificationCode,
             password: hashedPassword,
           },
@@ -36,34 +43,45 @@ const create = async (req, res) => {
         }
       ).select("-password -verificationCode")
     } else {
-      req.body.accessToken = accessToken
+      // req.body.accessToken = accessToken
       req.body.verificationCode = verificationCode
       req.body.password = hashedPassword
 
-      newUser = await User.create(req.body).select(
-        "-password -verificationCode"
-      )
+      newUser = await User.create(req.body)
+      newUser.password = ""
+      newUser.verificationCode = ""
     }
 
-    return ApiResponse.successCreate(res, { user: newUser })
+    return ApiResponse.successCreate(res, newUser)
   } catch (error) {
     console.error(error)
     return ApiResponse.fail(res)
   }
 }
 
-const login = async (req, res) => {
+const loginUser = async (req, res) => {
   try {
-    const { password, email, role } = req.body
-    const user = await User.findOne({ email, role }).select(
-      "-password -verificationCode"
-    )
+    const { password, email, role, lat, long } = req.body
+    const user = await User.findOne({ email, role })
 
-    if (!user || !hashCode(password, user.password))
+    if (
+      !user ||
+      !(await compairCode(password, user.password)) ||
+      !user.isVerified
+    )
       return ApiResponse.unknown(res, "Invalid Credentials!")
 
-    const accessToken = genratorToken.genratorAccessToken(user)
-    const refreshToken = genratorToken.genratorRefreshToken(user._id)
+    user.location = {
+      type: "Point",
+      coordinates:
+        req.body.lat && req.body.long
+          ? [Number(lat), Number(long)]
+          : [Number(user.lat), Number(user.long)],
+    }
+    await user.save()
+
+    const accessToken = genratorAccessToken(user)
+    const refreshToken = genratorRefreshToken(user._id)
 
     const options = {
       httpOnly: true,
@@ -74,26 +92,59 @@ const login = async (req, res) => {
     res.cookie("accessToken", accessToken, options)
     res.cookie("refreshToken", refreshToken, options)
 
-    return ApiResponse.successAccepted(res, "User Login Successfully!", user)
+    user.password = ""
+    user.verificationCode = ""
+
+    return ApiResponse.successAccepted(res, "User Login Successfully!", {
+      user,
+      tokens: { accessToken, refreshToken },
+    })
+  } catch (error) {
+    console.log(error.message)
+    return ApiResponse.fail(res)
+  }
+}
+
+const tokenRefresh = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken
+  try {
+    if (!refreshToken)
+      return ApiResponse.unauthorized(res, "Token is Required!")
+
+    let decode = decodeToken(refreshToken)
+    if (!decode) ApiResponse.unauthorized(res, "Invalid Refresh Token!")
+
+    const newRefreshToken = genratorRefreshToken(decode._id)
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+    })
+
+    return ApiResponse.successOk(res, "Token Refresh Updated Successfully!", {
+      refreshToken: newRefreshToken,
+    })
   } catch (error) {
     return ApiResponse.fail(res)
   }
 }
 
-const read = async (req, res) => {
+const getUser = async (req, res) => {
   try {
     const userData = req.userData
 
     if (!userData) return ApiResponse.notFound(res, "User Not found!")
 
-    return ApiResponse.successOk(res, "User Get Successfully!", userData)
+    return ApiResponse.successOk(res, "User Get Successfully!", {
+      user: userData,
+    })
   } catch (error) {
     // console.error("error: ", error)
     return ApiResponse.fail(res)
   }
 }
 
-const update = async (req, res) => {
+const updateUser = async (req, res) => {
   try {
     const userData = req.userData
     const user = await User.findOne({
@@ -116,7 +167,7 @@ const update = async (req, res) => {
     if (isPhoneExits)
       return ApiResponse.taken(res, "Phone Number Already Exitst!")
 
-    // req.body.refreshToken = genratorToken.genratorRefreshToken(user._id)
+    // req.body.refreshToken = genratorRefreshToken(user._id)
 
     const updatedUser = await User.updateOne(
       { email: user.email, role: user.role },
@@ -126,8 +177,8 @@ const update = async (req, res) => {
       }
     ).select("-password -verificationCode")
 
-    const accessToken = genratorToken.genratorAccessToken(updatedUser)
-    const refreshToken = genratorToken.genratorRefreshToken(updatedUser._id)
+    const accessToken = genratorAccessToken(updatedUser)
+    const refreshToken = genratorRefreshToken(updatedUser._id)
 
     const options = {
       httpOnly: true,
@@ -147,9 +198,7 @@ const update = async (req, res) => {
 const otpSend = async (req, res) => {
   try {
     // genrate otp
-    // const OTP =
     const OTP = genratorOTP()
-    console.log("OPT: ", OTP)
     const hashedCode = await hashCode(OTP)
     // sent to email
 
@@ -194,7 +243,7 @@ const otpVerify = async (req, res) => {
       return ApiResponse.unknown(res, "Invalid OTP!")
     }
 
-    const accessToken = genratorToken.genratorAccessToken(user)
+    const accessToken = genratorAccessToken(user)
 
     await User.updateOne(
       { _id: user._id },
@@ -208,7 +257,7 @@ const otpVerify = async (req, res) => {
   }
 }
 
-const foretPassword = async (req, res) => {
+const forgetPassword = async (req, res) => {
   try {
     const { email, role, password } = req.body
     const user = await User.findOne({ email, role }).lean()
@@ -217,21 +266,33 @@ const foretPassword = async (req, res) => {
       return ApiResponse.notFound(res, "User Not Found!")
 
     const newPassword = await hashCode(password)
-    const accessToken = genratorToken({ email, role })
-
-    await User.updateOne(
-      { _id: user._id },
-      { $set: { password: newPassword, accessToken } },
+    const updatedUser = await User.findByIdAndUpdate(
+      { _id: req.userData._id },
+      { $set: { password: newPassword } },
       { new: true }
     )
 
-    return ApiResponse.successOk(res, "Password Reset Successfully!", {
-      accessToken,
-    })
+    // await Sesssion.deleteMany({ userId: user._id })
+
+    // const accessToken = genratorAccessToken(user)
+    // const refreshToken = genratorRefreshToken(user._id)
+    // res.clearCookie("accessToken")
+    // res.clearCookie("refreshToken")
+
+    return ApiResponse.successOk(res, "Password Reset Successfully!")
   } catch (error) {
     console.error(error)
     return ApiResponse.fail(res)
   }
 }
 
-export { create, login, read, update, otpSend, otpVerify, foretPassword }
+export {
+  createUser,
+  loginUser,
+  tokenRefresh,
+  getUser,
+  updateUser,
+  otpSend,
+  otpVerify,
+  forgetPassword,
+}
