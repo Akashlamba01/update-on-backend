@@ -9,16 +9,18 @@ const verifyJwt = async (req, res, next) => {
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "")
 
-    if (!token) return ApiResponse.unauthorized(res)
+    if (!token || !req.cookies?.refreshToken)
+      return ApiResponse.unauthorized(res)
 
     const decode = jwt.verify(token, config.secretKeyJWT)
-    console.log("decode data: ", decode)
+    const decodeRefresh = decodeToken(req.cookies.refreshToken)
     const user = await User.findOne({
       email: decode?.email,
       role: decode?.role,
     })
 
-    if (!user) return ApiResponse.unknown(res, "Invalid token!")
+    if (!user || user._id !== decodeRefresh._id)
+      return ApiResponse.unknown(res, "Invalid token!")
 
     req.userData = decode
     next()

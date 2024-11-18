@@ -43,7 +43,7 @@ router.route("/login").post(
   loginUser
 )
 
-router.route("/get-profile").post(
+router.route("/get-profile").get(
   celebrate({
     body: Joi.object().keys({
       role: Joi.string().default("user"),
@@ -71,13 +71,14 @@ router.route("/update-profile").post(
   updateUser
 )
 
+//pending
 router.route("/refresh-token").post(
   celebrate({
     body: Joi.object().keys({
       role: Joi.string().default("user"),
     }),
   }),
-  verifyJwt,
+  // verifyJwt,
   tokenRefresh
 )
 
@@ -108,14 +109,22 @@ router.route("/forget-password").post(
       email: Joi.string().email().lowercase().required(),
       role: Joi.string().default("user"),
       password: Joi.string()
-        .pattern(new RegExp("[^a-zA-Z0-9!@#$%^&*]{6-16}"))
-        .required()
-        .min(8),
+        .pattern(new RegExp("^[a-zA-Z0-9!@#$%^&*]{6,16}$"))
+        .min(8)
+        .required(),
       confirmPassword: Joi.ref("password"),
     }),
   }),
-  verifyJwt,
   forgetPassword
 )
+
+// router.route("/delete").post(async (req, res) => {
+//   try {
+//     const deleteData = await User.deleteMany({ isVerified: false })
+//     return ApiResponse.successAccepted(res, "deleted", deleteData)
+//   } catch (error) {
+//     return ApiResponse.fail(res)
+//   }
+// })
 
 export default router

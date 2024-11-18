@@ -74,6 +74,10 @@ const userScheme = new mongoose.Schema(
         ref: "restaurent",
       },
     ],
+    //     *
+    // Restaurant type
+    // Restaurant email
+
     role: {
       type: String,
       enum: ["user", "restaurent", "shipper", "admin"],

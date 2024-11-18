@@ -71,22 +71,23 @@ const loginUser = async (req, res) => {
     )
       return ApiResponse.unknown(res, "Invalid Credentials!")
 
+    const refreshToken = genratorRefreshToken(user._id)
     user.location = {
       type: "Point",
       coordinates:
-        req.body.lat && req.body.long
+        lat && long
           ? [Number(lat), Number(long)]
           : [Number(user.lat), Number(user.long)],
     }
+    user.refreshToken = refreshToken
     await user.save()
 
     const accessToken = genratorAccessToken(user)
-    const refreshToken = genratorRefreshToken(user._id)
 
     const options = {
       httpOnly: true,
       secure: true,
-      // maxLen: 360000
+      // maxAge: 60 * 1000, // 1min
     }
 
     res.cookie("accessToken", accessToken, options)
@@ -105,8 +106,9 @@ const loginUser = async (req, res) => {
   }
 }
 
+// not pefect
 const tokenRefresh = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken
+  const refreshToken = req.cookies?.refreshToken
   try {
     if (!refreshToken)
       return ApiResponse.unauthorized(res, "Token is Required!")
@@ -119,6 +121,7 @@ const tokenRefresh = async (req, res) => {
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: true,
+      maxAge: 3600000,
     })
 
     return ApiResponse.successOk(res, "Token Refresh Updated Successfully!", {
@@ -167,9 +170,10 @@ const updateUser = async (req, res) => {
     if (isPhoneExits)
       return ApiResponse.taken(res, "Phone Number Already Exitst!")
 
-    // req.body.refreshToken = genratorRefreshToken(user._id)
+    const refreshToken = genratorRefreshToken(user._id)
+    req.body.refreshToken = refreshToken
 
-    const updatedUser = await User.updateOne(
+    const updatedUser = await User.findOneAndUpdate(
       { email: user.email, role: user.role },
       req.body,
       {
@@ -178,7 +182,6 @@ const updateUser = async (req, res) => {
     ).select("-password -verificationCode")
 
     const accessToken = genratorAccessToken(updatedUser)
-    const refreshToken = genratorRefreshToken(updatedUser._id)
 
     const options = {
       httpOnly: true,
@@ -191,6 +194,7 @@ const updateUser = async (req, res) => {
 
     return ApiResponse.successOk(res, "User Updated Successfully", updatedUser)
   } catch (error) {
+    console.log(error.message)
     return ApiResponse.fail(res)
   }
 }
@@ -260,26 +264,32 @@ const otpVerify = async (req, res) => {
 const forgetPassword = async (req, res) => {
   try {
     const { email, role, password } = req.body
-    const user = await User.findOne({ email, role }).lean()
+    const user = await User.findOne({ email, role })
 
     if (!user || !user.isVerified)
       return ApiResponse.notFound(res, "User Not Found!")
 
     const newPassword = await hashCode(password)
-    const updatedUser = await User.findByIdAndUpdate(
-      { _id: req.userData._id },
-      { $set: { password: newPassword } },
-      { new: true }
+    const refreshToken = genratorRefreshToken(user._id)
+
+    const updatedUser = await User.findOneAndUpdate(
+      { email, role },
+      {
+        $set: {
+          password: newPassword,
+          refreshToken: refreshToken,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select("-password -verificationCode")
+
+    return ApiResponse.successOk(
+      res,
+      "Password Reset Successfully!",
+      updatedUser
     )
-
-    // await Sesssion.deleteMany({ userId: user._id })
-
-    // const accessToken = genratorAccessToken(user)
-    // const refreshToken = genratorRefreshToken(user._id)
-    // res.clearCookie("accessToken")
-    // res.clearCookie("refreshToken")
-
-    return ApiResponse.successOk(res, "Password Reset Successfully!")
   } catch (error) {
     console.error(error)
     return ApiResponse.fail(res)

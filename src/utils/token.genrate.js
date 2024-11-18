@@ -4,12 +4,13 @@ import jwt from "jsonwebtoken"
 const genratorAccessToken = (user) => {
   const accessData = {
     _id: user._id,
+    role: user?.role,
     firstName: user?.firstName,
     lastName: user?.lastName,
     fullName: user?.fullName,
     email: user?.email,
-    role: user?.role,
     phoneNumber: user?.phoneNumber,
+    avatar: user?.avatar,
     gender: user?.gender,
     birthday: user?.birthday,
   }
