@@ -10,12 +10,32 @@ const addressSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    phoneNumber: {
+    // deliveryMethod: {
+    //   type: String,
+    //   enum: ["shipper", "onsite"],
+    // },
+    restaurantName: {
       type: String,
+      default: "",
+    },
+    restaurantType: {
+      type: String,
+      enum: ["vertual", "physical"],
+    },
+    restaurantEmail: {
+      type: String,
+      default: "",
     },
     countryCode: {
       type: String,
-      default: "+91",
+      default: "+61",
+    },
+    alternatePhone: {
+      type: String,
+    },
+    street: {
+      type: String,
+      default: "",
     },
     suberb: {
       type: String,
@@ -33,17 +53,23 @@ const addressSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    isDefault: {
-      type: Boolean,
-      default: false,
+    website: {
+      type: String,
+      default: "",
     },
-    isDeliveryAddress: {
+    description: {
+      type: String,
+      default: "",
+    },
+    isDefaultAddress: {
       type: Boolean,
       default: false,
     },
   },
   { timestamps: true }
 )
+
+addressSchema.index({ user: 1 })
 
 const Address = mongoose.model("Address", addressSchema)
 export { Address }

@@ -11,6 +11,12 @@ import {
   tokenRefresh,
 } from "../../controllers/auth.controller.js"
 import { verifyJwt } from "../../middlewares/auth.middleware.js"
+import {
+  addAddress,
+  getAddress,
+  removeAddress,
+  updateAddress,
+} from "../../controllers/common.controller.js"
 const router = express.Router()
 
 router.route("/register").post(
@@ -118,13 +124,59 @@ router.route("/forget-password").post(
   forgetPassword
 )
 
-// router.route("/delete").post(async (req, res) => {
-//   try {
-//     const deleteData = await User.deleteMany({ isVerified: false })
-//     return ApiResponse.successAccepted(res, "deleted", deleteData)
-//   } catch (error) {
-//     return ApiResponse.fail(res)
-//   }
-// })
+router.route("/add-addresss").post(
+  celebrate({
+    body: Joi.object().keys({
+      toName: Joi.string().required(),
+      alternatePhone: Joi.string()
+        .regex(/^[0-9]{8,15}$/)
+        .required(),
+      street: Joi.string().required(),
+      suberb: Joi.string().required(),
+      postCode: Joi.string()
+        .regex(/^[0-9]{6}$/)
+        .required(),
+      lat: Joi.string().required(),
+      long: Joi.string().required(),
+      location: Joi.object().default({
+        type: "Point",
+        coordinates: [Number(78.088), Number(27.8974)],
+      }),
+      role: Joi.string().default("user"),
+    }),
+  }),
+  verifyJwt,
+  addAddress
+)
+
+router.route("/update-address/:addressId").post(
+  celebrate({
+    body: Joi.object().keys({
+      toName: Joi.string().optional(),
+      alternatePhone: Joi.string()
+        .regex(/^[0-9]{8,15}$/)
+        .optional(),
+      street: Joi.string().optional(),
+      suberb: Joi.string().optional(),
+      postCode: Joi.string()
+        .regex(/^[0-9]{6}$/)
+        .optional(),
+      lat: Joi.string().optional(),
+      long: Joi.string().optional(),
+      location: Joi.object().default({
+        type: "Point",
+        coordinates: [Number(78.088), Number(27.8974)],
+      }),
+      isDefaultAddress: Joi.boolean().default(false),
+      role: Joi.string().default("user"),
+    }),
+  }),
+  verifyJwt,
+  updateAddress
+)
+
+router.route("/get-address").post(verifyJwt, getAddress)
+
+router.route("/delete-address/:addressId").post(verifyJwt, removeAddress)
 
 export default router
