@@ -1,4 +1,11 @@
 import bcrypt from "bcrypt"
+import admin from "firebase-admin"
+import { config } from "../config/config.js"
+
+const serviceAccount = JSON.parse(config.firebase)
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+})
 
 const genratorOTP = () => {
   return 123456 //only for development mode

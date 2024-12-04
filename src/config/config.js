@@ -12,6 +12,8 @@ export const config = {
   refreshSecretJWT: process.env.REFRESH_TOKEN_SECRET,
   refreshSecretExpiryJWT: process.env.REFRESH_TOKEN_EXPIRY,
 
+  firebase: process.env.FIREBASE_CREDENTIALS,
+
   // cloudName: process.env.CLOUDINARY_CLOUD_NAME,
   // cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
   // cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
