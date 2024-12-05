@@ -6,7 +6,7 @@ const connectDB = async () => {
   try {
     // console.log(config.DB_URI, "db")
     const connectionInstence = await mongoose.connect(
-      `${config.DB_URI}/${DB_NAME}`
+      `${config.dbURILocal}/${DB_NAME}`
     )
     console.log("DB Conencted!!")
     // console.log(connectionInstence.connection.host)

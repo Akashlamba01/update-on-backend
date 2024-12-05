@@ -12,6 +12,12 @@ const verifyJwt = async (req, res, next) => {
     if (!token || !req.cookies?.refreshToken)
       return ApiResponse.unauthorized(res)
 
+    // if (token == "test" && role == "admin") {
+    //   req.userData = { role: "admin" }
+    //   next()
+    //   return
+    // }
+
     const decode = jwt.verify(token, config.secretKeyJWT)
     const decodeRefresh = decodeToken(req.cookies.refreshToken)
     const user = await User.findOne({

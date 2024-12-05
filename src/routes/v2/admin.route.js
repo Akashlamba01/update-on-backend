@@ -17,6 +17,7 @@ import {
   removeAddress,
   updateAddress,
 } from "../../controllers/common.controller.js"
+import { login, notificationToAll } from "../../controllers/admin.controller.js"
 
 const router = express.Router()
 
@@ -30,20 +31,22 @@ router.route("/login").post(
       long: Joi.string().optional(),
     }),
   }),
-  loginUser
+  login
 )
 
 router.post(
-  "/notificationManagement",
+  "/notification-to-all",
   celebrate({
     body: Joi.object().keys({
-      deviceType: Joi.string().optional().valid("1", "2", "3"),
+      deviceType: Joi.string().optional().valid(1, 2, 3),
       role: Joi.string().valid("user", "agent", "merchant"),
       users: Joi.array().items(Joi.string()).default([]).optional(),
       heading: Joi.string().required(),
       message: Joi.string().required(),
     }),
-  })
+  }),
+  verifyJwt,
+  notificationToAll
 )
 
 export default router

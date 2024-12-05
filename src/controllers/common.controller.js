@@ -1,5 +1,5 @@
-import { Address } from "../models/address.model"
-import ApiResponse from "../utils/api.responses"
+import { Address } from "../models/address.model.js"
+import ApiResponse from "../utils/api.responses.js"
 
 const addAddress = async (req, res) => {
   try {

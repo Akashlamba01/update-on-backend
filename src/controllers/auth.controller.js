@@ -61,7 +61,8 @@ const createUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
-    const { password, email, role, lat, long } = req.body
+    const { password, email, role, deviceToken, deviceType, lat, long } =
+      req.body
     const user = await User.findOne({ email, role })
 
     if (
@@ -72,6 +73,7 @@ const loginUser = async (req, res) => {
       return ApiResponse.unknown(res, "Invalid Credentials!")
 
     const refreshToken = genratorRefreshToken(user._id)
+
     user.location = {
       type: "Point",
       coordinates:
@@ -80,10 +82,11 @@ const loginUser = async (req, res) => {
           : [Number(user.lat), Number(user.long)],
     }
     user.refreshToken = refreshToken
+    ;(user.deviceToken = deviceToken), (user.deviceType = deviceType)
+
     await user.save()
 
     const accessToken = genratorAccessToken(user)
-
     const options = {
       httpOnly: true,
       secure: true,
@@ -103,6 +106,27 @@ const loginUser = async (req, res) => {
   } catch (error) {
     console.log(error.message)
     return ApiResponse.fail(res)
+  }
+}
+
+const logout = async (req, res) => {
+  try {
+    let data = await User.findByIdAndUpdate(
+      req.userData._id,
+      {
+        refreshToken: "",
+        deviceToken: null,
+      },
+      {
+        new: true,
+      }
+    )
+    if (!data) {
+      return ApiResponse.unknown(res)
+    }
+    return ApiResponse.successOk(res, "User Loged Out Successfully!")
+  } catch (error) {
+    return ApiResponse.fail(res, error.message)
   }
 }
 
@@ -299,10 +323,12 @@ const forgetPassword = async (req, res) => {
 export {
   createUser,
   loginUser,
+  logout,
   tokenRefresh,
   getUser,
   updateUser,
   otpSend,
   otpVerify,
   forgetPassword,
+  loginSamp,
 }

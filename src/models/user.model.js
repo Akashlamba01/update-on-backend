@@ -1,6 +1,5 @@
 import mongoose from "mongoose"
-// import { hashCode } from "../utils/helper.js"
-// import { genratorToken } from "../utils/token.genrate.js"
+import { hashCode } from "../utils/helper.js"
 
 const userScheme = new mongoose.Schema(
   {
@@ -12,7 +11,7 @@ const userScheme = new mongoose.Schema(
       type: String,
       default: "",
     },
-    diviceToken: {
+    deviceToken: {
       type: String,
       default: "",
     },
@@ -94,6 +93,10 @@ const userScheme = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    deviceType: {
+      type: Number,
+      default: null,
+    },
     isCompleted: {
       type: Boolean,
       default: false,
@@ -115,33 +118,33 @@ const userScheme = new mongoose.Schema(
 userScheme.index({ email: 1, role: 1 })
 
 const User = mongoose.model("User", userScheme)
-// await User.findOne({
-//   role: "admin",
-// }).then((res) => {
-//   if (!res) {
-//     User.create({
-//       email: "admin@gmail.com",
-//       password: hashCode(12345678), //12345678
-//       role: "admin",
-//       accessToken: genratorToken.genratorAccessToken({ email }),
-//       location: {
-//         type: "Point",
-//         coordinates: [0, 0],
-//       },
-//       isVerified: true,
-//     })
-//     User.create({
-//       email: "tester@gmail.com",
-//       password: hashCode(12345678), //12345678
-//       role: "admin",
-//       accessToken: genratorToken.genratorAccessToken({ email }),
-//       location: {
-//         type: "Point",
-//         coordinates: [0, 0],
-//       },
-//       isVerified: true,
-//     })
-//   }
-// })
+User.findOne({
+  role: "admin",
+}).then(async (res) => {
+  if (!res) {
+    await User.create({
+      email: "admin@gmail.com",
+      password: await hashCode(12345678), //12345678
+      role: "admin",
+      // accessToken: genratorAccessToken(),
+      location: {
+        type: "Point",
+        coordinates: [0, 0],
+      },
+      isVerified: true,
+    })
+    await User.create({
+      email: "tester@gmail.com",
+      password: await hashCode(12345678), //12345678
+      role: "admin",
+      // accessToken: genratorAccessToken({ email }),
+      location: {
+        type: "Point",
+        coordinates: [0, 0],
+      },
+      isVerified: true,
+    })
+  }
+})
 
 export { User }

@@ -9,6 +9,7 @@ import {
   updateUser,
   forgetPassword,
   tokenRefresh,
+  loginSamp,
 } from "../../controllers/auth.controller.js"
 import { verifyJwt } from "../../middlewares/auth.middleware.js"
 import {
@@ -42,6 +43,8 @@ router.route("/login").post(
       email: Joi.string().email().lowercase().required(),
       role: Joi.string().default("user"),
       password: Joi.string().required(),
+      deviceToken: Joi.string().optional(),
+      deviceType: Joi.string().optional().valid(1, 2, 3),
       lat: Joi.string().optional(),
       long: Joi.string().optional(),
     }),
