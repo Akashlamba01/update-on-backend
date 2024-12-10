@@ -26,25 +26,25 @@ app.use("/api", mainRoutes)
 // app.use("/api/v1/users", userRoutes)
 
 // to find the device
-// app.get("/get-devicetype", (req, res) => {
-//   const userAgent = req.get("User-Agent")
-//   // console.log(userAgent)
-//   if (userAgent) {
-//     if (/android/i.test(userAgent)) {
-//       req.deviceType = "Android"
-//     } else if (/iphone|ipod/i.test(userAgent)) {
-//       req.deviceType = "iOS"
-//     } else if (/web/i.test(userAgent)) {
-//       req.deviceType = "Web"
-//     } else {
-//       req.deviceType = "Unknown"
-//     }
-//   }
-//   return res.status(200).json({
-//     message: "success",
-//     device: req.deviceType,
-//   })
-// })
+app.get("/get-devicetype", (req, res) => {
+  const userAgent = req.get("User-Agent")
+  // console.log(userAgent)
+  if (userAgent) {
+    if (/android/i.test(userAgent)) {
+      req.deviceType = "Android"
+    } else if (/iphone|ipod/i.test(userAgent)) {
+      req.deviceType = "iOS"
+    } else if (/web/i.test(userAgent)) {
+      req.deviceType = "Web"
+    } else {
+      req.deviceType = "Unknown"
+    }
+  }
+  return res.status(200).json({
+    message: "success",
+    device: req.deviceType,
+  })
+})
 
 app.use(errors())
 
