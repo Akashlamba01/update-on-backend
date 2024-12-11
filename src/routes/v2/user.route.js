@@ -5,11 +5,10 @@ import {
   otpSend,
   createUser,
   loginUser,
-  getUser,
   updateUser,
   forgetPassword,
   tokenRefresh,
-  loginSamp,
+  getProfile,
 } from "../../controllers/auth.controller.js"
 import { verifyJwt } from "../../middlewares/auth.middleware.js"
 import {
@@ -35,60 +34,6 @@ router.route("/register").post(
     }),
   }),
   createUser
-)
-
-router.route("/login").post(
-  celebrate({
-    body: Joi.object().keys({
-      email: Joi.string().email().lowercase().required(),
-      role: Joi.string().default("user"),
-      password: Joi.string().required(),
-      deviceToken: Joi.string().optional(),
-      deviceType: Joi.string().optional().valid(1, 2, 3),
-      lat: Joi.string().optional(),
-      long: Joi.string().optional(),
-    }),
-  }),
-  loginUser
-)
-
-router.route("/get-profile").get(
-  celebrate({
-    body: Joi.object().keys({
-      role: Joi.string().default("user"),
-    }),
-  }),
-  verifyJwt,
-  getUser
-)
-
-router.route("/update-profile").post(
-  celebrate({
-    body: Joi.object().keys({
-      firstName: Joi.string().lowercase().optional(),
-      lastName: Joi.string().lowercase().optional(),
-      fullName: Joi.string().lowercase().optional(),
-      phoneNumber: Joi.string()
-        .regex(/^[0-9]{8,15}$/)
-        .optional(),
-      gender: Joi.string().valid("male", "female", "other"),
-      birthday: Joi.string().optional(),
-      role: Joi.string().default("user"),
-    }),
-  }),
-  verifyJwt,
-  updateUser
-)
-
-//pending
-router.route("/refresh-token").post(
-  celebrate({
-    body: Joi.object().keys({
-      role: Joi.string().default("user"),
-    }),
-  }),
-  // verifyJwt,
-  tokenRefresh
 )
 
 router.route("/send-code").post(
@@ -125,6 +70,62 @@ router.route("/forget-password").post(
     }),
   }),
   forgetPassword
+)
+
+router.route("/login").post(
+  celebrate({
+    body: Joi.object().keys({
+      email: Joi.string().email().lowercase().required(),
+      role: Joi.string().default("user"),
+      password: Joi.string().required(),
+      deviceToken: Joi.string().optional(),
+      deviceType: Joi.string().optional().valid(1, 2, 3),
+      lat: Joi.string().optional(),
+      long: Joi.string().optional(),
+    }),
+  }),
+  loginUser
+)
+
+router.route("/refresh-token").post(
+  celebrate({
+    body: Joi.object().keys({
+      role: Joi.string().default("user"),
+      refreshToken: Joi.string().optional(),
+    }),
+  }),
+  tokenRefresh
+)
+
+router.route("/get-profile").get(
+  celebrate({
+    body: Joi.object().keys({
+      role: Joi.string().default("user"),
+    }),
+  }),
+  verifyJwt,
+  getProfile
+)
+
+router.route("/update-profile").post(
+  celebrate({
+    body: Joi.object().keys({
+      firstName: Joi.string().lowercase().optional(),
+      lastName: Joi.string().lowercase().optional(),
+      fullName: Joi.string().lowercase().optional(),
+      // avtar: Joi.string().lowercase().optional(),
+      // coverImage: Joi.string().lowercase().optional(),
+      phoneNumber: Joi.string()
+        .regex(/^[0-9]{8,15}$/)
+        .optional(),
+      gender: Joi.string().valid("male", "female", "other").optional(),
+
+      birthday: Joi.string().optional(),
+      role: Joi.string().default("user"),
+    }),
+  }),
+  verifyJwt,
+  updateUser
 )
 
 router.route("/add-addresss").post(

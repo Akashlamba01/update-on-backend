@@ -1,3 +1,4 @@
+import { cookieOptions } from "../constents.js"
 import { User } from "../models/user.model.js"
 import ApiResponse from "../utils/api.responses.js"
 import { compairCode, sendNotification } from "../utils/helper.js"
@@ -24,14 +25,8 @@ const login = async (req, res) => {
     const refreshToken = genratorRefreshToken(user._id)
     const accessToken = genratorAccessToken(user)
 
-    const options = {
-      httpOnly: true,
-      secure: true,
-      // maxAge: 60 * 1000, // 1min
-    }
-
-    res.cookie("accessToken", accessToken, options)
-    res.cookie("refreshToken", refreshToken, options)
+    res.cookie("accessToken", accessToken, cookieOptions)
+    res.cookie("refreshToken", refreshToken, cookieOptions)
 
     user.password = ""
     user.verificationCode = ""

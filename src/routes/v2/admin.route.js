@@ -5,7 +5,7 @@ import {
   otpSend,
   createUser,
   loginUser,
-  getUser,
+  getProfile,
   updateUser,
   forgetPassword,
   tokenRefresh,

@@ -6,7 +6,8 @@ import {
 } from "../utils/token.genrate.js"
 import { compairCode, genratorOTP, hashCode } from "../utils/helper.js"
 // import Sesssion from "../models/session.model.js"
-import { decodeToken } from "../middlewares/auth.middleware.js"
+import { decodeRefreshToken } from "../middlewares/auth.middleware.js"
+import { cookieOptions } from "../constents.js"
 // import Sequence from "../models/sequence.handler.model.js"
 
 //accessToken 15min
@@ -87,14 +88,9 @@ const loginUser = async (req, res) => {
     await user.save()
 
     const accessToken = genratorAccessToken(user)
-    const options = {
-      httpOnly: true,
-      secure: true,
-      // maxAge: 60 * 1000, // 1min
-    }
 
-    res.cookie("accessToken", accessToken, options)
-    res.cookie("refreshToken", refreshToken, options)
+    res.cookie("accessToken", accessToken, cookieOptions)
+    res.cookie("refreshToken", refreshToken, cookieOptions)
 
     user.password = ""
     user.verificationCode = ""
@@ -124,102 +120,41 @@ const logout = async (req, res) => {
     if (!data) {
       return ApiResponse.unknown(res)
     }
+
+    res.clearCookie(refreshToken, cookieOptions)
+    res.clearcookie(accessToken, cookieOptions)
+
     return ApiResponse.successOk(res, "User Loged Out Successfully!")
   } catch (error) {
     return ApiResponse.fail(res, error.message)
   }
 }
 
-// not pefect
 const tokenRefresh = async (req, res) => {
-  const refreshToken = req.cookies?.refreshToken
-  try {
-    if (!refreshToken)
-      return ApiResponse.unauthorized(res, "Token is Required!")
+  const refreshToken = req.cookies?.refreshToken || req.body.refreshToken
+  if (!refreshToken) return ApiResponse.unauthorized(res, "Token is Required!")
 
-    let decode = decodeToken(refreshToken)
+  try {
+    const decode = decodeRefreshToken(refreshToken)
     if (!decode) ApiResponse.unauthorized(res, "Invalid Refresh Token!")
 
-    const newRefreshToken = genratorRefreshToken(decode._id)
+    const user = await User.findById(decode._id)
 
-    res.cookie("refreshToken", newRefreshToken, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 3600000,
-    })
+    if (!user || user.refreshToken != refreshToken)
+      return ApiResponse.unauthorized(res, "User Not Found!")
+
+    const newRefreshToken = genratorRefreshToken(decode._id)
+    const accessToken = genratorAccessToken(user)
+
+    res.cookie("refreshToken", newRefreshToken, cookieOptions)
+    res.cookie("accessToken", accessToken, cookieOptions)
 
     return ApiResponse.successOk(res, "Token Refresh Updated Successfully!", {
       refreshToken: newRefreshToken,
+      accessToken,
     })
   } catch (error) {
-    return ApiResponse.fail(res)
-  }
-}
-
-const getUser = async (req, res) => {
-  try {
-    const userData = req.userData
-
-    if (!userData) return ApiResponse.notFound(res, "User Not found!")
-
-    return ApiResponse.successOk(res, "User Get Successfully!", {
-      user: userData,
-    })
-  } catch (error) {
-    // console.error("error: ", error)
-    return ApiResponse.fail(res)
-  }
-}
-
-const updateUser = async (req, res) => {
-  try {
-    const userData = req.userData
-    const user = await User.findOne({
-      email: userData.email,
-      role: userData.role,
-    }).lean()
-
-    if (!user) return ApiResponse.notFound(res, "User Not Found!")
-
-    if (!req.body.fullName) {
-      req.body.fullName = req.body.firstName + " " + req.body.lastName
-    }
-
-    const isPhoneExits = await User.findOne({
-      role: req.body.role,
-      phoneNumber: req.body.phoneNumber,
-      email: { $ne: userData.email },
-    })
-
-    if (isPhoneExits)
-      return ApiResponse.taken(res, "Phone Number Already Exitst!")
-
-    const refreshToken = genratorRefreshToken(user._id)
-    req.body.refreshToken = refreshToken
-
-    const updatedUser = await User.findOneAndUpdate(
-      { email: user.email, role: user.role },
-      req.body,
-      {
-        new: true,
-      }
-    ).select("-password -verificationCode")
-
-    const accessToken = genratorAccessToken(updatedUser)
-
-    const options = {
-      httpOnly: true,
-      secure: true,
-      maxAge: 3600000, // Sets the expiration time in milliseconds (1 hour in this case)
-    }
-
-    res.cookie("accessToken", accessToken, options)
-    res.cookie("refreshToken", refreshToken, options)
-
-    return ApiResponse.successOk(res, "User Updated Successfully", updatedUser)
-  } catch (error) {
-    console.log(error.message)
-    return ApiResponse.fail(res)
+    return ApiResponse.fail(res, error.message || "Invalid Refresh Token!")
   }
 }
 
@@ -320,15 +255,71 @@ const forgetPassword = async (req, res) => {
   }
 }
 
+const getProfile = async (req, res) => {
+  try {
+    const userData = req.userData
+
+    if (!userData) return ApiResponse.notFound(res, "User Not found!")
+
+    return ApiResponse.successOk(res, "User Get Successfully!", {
+      user: userData,
+    })
+  } catch (error) {
+    // console.error("error: ", error)
+    return ApiResponse.fail(res)
+  }
+}
+
+const updateUser = async (req, res) => {
+  try {
+    const userData = req.userData
+    const user = await User.findOne({
+      email: userData.email,
+      role: userData.role,
+    })
+
+    if (!user) return ApiResponse.notFound(res, "User Not Found!")
+
+    if (!req.body.fullName) {
+      req.body.fullName = req.body.firstName + " " + req.body.lastName
+    }
+
+    if (req.body.phoneNumber) {
+      const isPhoneExits = await User.findOne({
+        role: req.body.role,
+        phoneNumber: req.body.phoneNumber,
+        email: { $ne: userData.email },
+      })
+      if (isPhoneExits)
+        return ApiResponse.taken(res, "Phone Number Already Exitst!")
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { email: user.email, role: user.role },
+      req.body,
+      {
+        new: true,
+      }
+    ).select("-password -verificationCode")
+
+    const accessToken = genratorAccessToken(updatedUser)
+    res.cookie("accessToken", accessToken, cookieOptions)
+
+    return ApiResponse.successOk(res, "User Updated Successfully", updatedUser)
+  } catch (error) {
+    console.log(error.message)
+    return ApiResponse.fail(res)
+  }
+}
+
 export {
   createUser,
   loginUser,
   logout,
   tokenRefresh,
-  getUser,
+  getProfile,
   updateUser,
   otpSend,
   otpVerify,
   forgetPassword,
-  loginSamp,
 }

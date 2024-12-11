@@ -47,6 +47,10 @@ const userScheme = new mongoose.Schema(
       type: String,
       default: "",
     },
+    coverImage: {
+      type: String,
+      default: "",
+    },
     lat: { type: String, default: "27.8974" },
     long: { type: String, default: "78.0880" },
     location: {

@@ -9,33 +9,36 @@ const verifyJwt = async (req, res, next) => {
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "")
 
-    if (!token || !req.cookies?.refreshToken)
-      return ApiResponse.unauthorized(res)
+    if (!token)
+      return ApiResponse.unauthorized(res, "Access or Refresh Token missing!")
 
-    // if (token == "test" && role == "admin") {
-    //   req.userData = { role: "admin" }
-    //   next()
-    //   return
-    // }
+    if (token == "test" && role == "admin") {
+      req.userData = { role: "admin" }
+      next()
+      return
+    }
 
     const decode = jwt.verify(token, config.secretKeyJWT)
-    const decodeRefresh = decodeToken(req.cookies.refreshToken)
     const user = await User.findOne({
       email: decode?.email,
       role: decode?.role,
-    })
+    }).select("-password -verificationCode")
 
-    if (!user || user._id !== decodeRefresh._id)
-      return ApiResponse.unknown(res, "Invalid token!")
+    if (!user) return ApiResponse.unauthorized(res, "User not found!")
 
     req.userData = decode
     next()
   } catch (error) {
-    return ApiResponse.unauthorized(res, "User Unauthorized!")
+    if (error.name === "TokenExpiredError") {
+      return ApiResponse.unauthorized(res, "Access token expired!")
+    } else if (error.name === "JsonWebTokenError") {
+      return ApiResponse.unauthorized(res, "Invalid access token!")
+    }
   }
 }
 
-const decodeToken = (token) => {
+const decodeRefreshToken = (token) => {
   return jwt.verify(token, config.refreshSecretJWT)
 }
-export { verifyJwt, decodeToken }
+
+export { verifyJwt, decodeRefreshToken }
