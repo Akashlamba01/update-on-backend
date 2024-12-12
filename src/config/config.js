@@ -14,9 +14,9 @@ export const config = {
 
   firebase: process.env.FIREBASE_CREDENTIALS,
 
-  // cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-  // cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
-  // cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
-  // cloudinaryUserAvatar: process.env.CLOUDINARY_USER_AVATAR,
-  // cloudinaryUserCoverimg: process.env.CLOUDINARY_USER_COVER_IMG,
+  cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
+  cloudinaryUserAvatar: process.env.CLOUDINARY_USER_AVATAR,
+  cloudinaryUserCoverimg: process.env.CLOUDINARY_USER_COVER_IMG,
 }

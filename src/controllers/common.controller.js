@@ -1,12 +1,31 @@
+import { config } from "../config/config.js"
+import { cookieOptions } from "../constents.js"
 import { Address } from "../models/address.model.js"
+import { User } from "../models/user.model.js"
 import ApiResponse from "../utils/api.responses.js"
+import { uploadOnCloudinary } from "../utils/cloudinary.js"
+
+const getProfile = async (req, res) => {
+  try {
+    const userData = req.userData
+
+    if (!userData) return ApiResponse.notFound(res, "User Not found!")
+
+    return ApiResponse.successOk(res, "User Get Successfully!", {
+      user: userData,
+    })
+  } catch (error) {
+    // console.error("error: ", error)
+    return ApiResponse.fail(res)
+  }
+}
 
 const addAddress = async (req, res) => {
   try {
     const userId = req.userData._id
     const addresses = await Address.find({ user: userId })
 
-    if (req.body.role !== "restaurent") {
+    if (req.userData.role !== "restaurent") {
       if (addresses.length >= 5) {
         return ApiResponse.fail(res, "Please Delete Any One Address!")
       }
@@ -103,37 +122,51 @@ const removeAddress = async (req, res) => {
   }
 }
 
-const makeDefaultAddress = async (req, res) => {
+// media upload
+const uploadMedia = async (req, res) => {
+  const avatarLoaclPath = req?.files?.avatar[0]?.path
+  const coverImageLocalPath = req?.fiels?.coverImage[0]?.path
+
+  if (!avatarLoaclPath || !coverImageLocalPath)
+    return ApiResponse.fail(res, "Upload Field is Required!")
+
   try {
-    const addressId = req.params.addressId
+    const user = await User.findOne({
+      email: req.userData.email,
+      role: req.userData.role,
+    }).select("-password -verificationCode")
+    if (!user) return ApiResponse.notFound(res, "User Not Found!")
 
-    const userAddress = await Address.findById(addressId)
+    if (avatarLoaclPath) {
+      const avatar = await uploadOnCloudinary(
+        avatarLoaclPath,
+        config.cloudinaryUserAvatar
+      )
+      user.avatar = avatar.url
+    }
+    if (coverImageLocalPath) {
+      const coverImage = await uploadOnCloudinary(
+        coverImageLocalPath,
+        config.cloudinaryUserCoverimg
+      )
+      user.coverImage = coverImage.url
+    }
+    await user.save()
 
-    if (!userAddress) return ApiResponse.notFound(res, "Address not found!")
+    const accessToken = genratorAccessToken(user)
+    res.cookie("accessToken", accessToken, cookieOptions)
 
-    await Address.findOneAndUpdate(
-      {
-        user: req.userData._id,
-        isDefaultAddress: true,
-      },
-      {
-        $set: {
-          isDefaultAddress: false,
-        },
-      }
-    ).lean()
-
-    userAddress.isDefaultAddress = true
-    await userAddress.save()
-
-    return ApiResponse.successOk(
-      res,
-      "Change Default Address Successfully!",
-      userAddress
-    )
+    return ApiResponse.successAccepted(res, "Media Updated Successfully!")
   } catch (error) {
     return ApiResponse.fail(res, error.message)
   }
 }
 
-export { addAddress, updateAddress, getAddress, removeAddress }
+export {
+  getProfile,
+  addAddress,
+  updateAddress,
+  getAddress,
+  removeAddress,
+  uploadMedia,
+}
