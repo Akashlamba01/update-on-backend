@@ -4,6 +4,7 @@ import { Address } from "../models/address.model.js"
 import { User } from "../models/user.model.js"
 import ApiResponse from "../utils/api.responses.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { genratorAccessToken } from "../utils/token.genrate.js"
 
 const getProfile = async (req, res) => {
   try {
@@ -124,13 +125,23 @@ const removeAddress = async (req, res) => {
 
 // media upload
 const uploadMedia = async (req, res) => {
-  const avatarLoaclPath = req?.files?.avatar[0]?.path
-  const coverImageLocalPath = req?.fiels?.coverImage[0]?.path
-
-  if (!avatarLoaclPath || !coverImageLocalPath)
-    return ApiResponse.fail(res, "Upload Field is Required!")
-
   try {
+    const avatarLoaclPath = req?.files?.avatar
+      ? req.files.avatar[0]?.path
+      : null
+    const coverImageLocalPath = req?.files?.coverImage
+      ? req.files.coverImage[0]?.path
+      : null
+
+    if (!avatarLoaclPath && !coverImageLocalPath)
+      return ApiResponse.fail(res, "At least one upload field is required!")
+
+    if (avatarLoaclPath && coverImageLocalPath)
+      return ApiResponse.fail(
+        res,
+        "Please upload either avatar or cover image, not both!"
+      )
+
     const user = await User.findOne({
       email: req.userData.email,
       role: req.userData.role,
@@ -156,7 +167,7 @@ const uploadMedia = async (req, res) => {
     const accessToken = genratorAccessToken(user)
     res.cookie("accessToken", accessToken, cookieOptions)
 
-    return ApiResponse.successAccepted(res, "Media Updated Successfully!")
+    return ApiResponse.successOk(res, "Media Updated Successfully!")
   } catch (error) {
     return ApiResponse.fail(res, error.message)
   }

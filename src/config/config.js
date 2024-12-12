@@ -14,6 +14,9 @@ export const config = {
 
   firebase: process.env.FIREBASE_CREDENTIALS,
 
+  maxFileSize: process.env.MAX_FILE_SIZE,
+  allowFileTypes: process.env.ALLOWED_FILE_TYPES,
+
   cloudName: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
