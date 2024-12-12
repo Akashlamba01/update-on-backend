@@ -8,15 +8,17 @@ import {
   updateUser,
   forgetPassword,
   tokenRefresh,
-  getProfile,
 } from "../../controllers/auth.controller.js"
 import { verifyJwt } from "../../middlewares/auth.middleware.js"
 import {
+  getProfile,
   addAddress,
   getAddress,
   removeAddress,
   updateAddress,
+  uploadMedia,
 } from "../../controllers/common.controller.js"
+import { upload } from "../../middlewares/multer.middleware.js"
 const router = express.Router()
 
 router.route("/register").post(
@@ -95,16 +97,6 @@ router.route("/refresh-token").post(
     }),
   }),
   tokenRefresh
-)
-
-router.route("/get-profile").get(
-  celebrate({
-    body: Joi.object().keys({
-      role: Joi.string().default("user"),
-    }),
-  }),
-  verifyJwt,
-  getProfile
 )
 
 router.route("/update-profile").post(
