@@ -8,6 +8,7 @@ import { compairCode, genratorOTP, hashCode } from "../utils/helper.js"
 // import Sesssion from "../models/session.model.js"
 import { decodeRefreshToken } from "../middlewares/auth.middleware.js"
 import { cookieOptions } from "../constents.js"
+import { generateQrCode } from "../utils/cloudinary.js"
 
 // import Sequence from "../models/sequence.handler.model.js"
 
@@ -300,7 +301,19 @@ const updateUser = async (req, res) => {
   }
 }
 
-const qrCodeGenrate = async (req, res) => {}
+const qrCodeGenrate = async (req, res) => {
+  try {
+    const qrCodeUrl = await generateQrCode(
+      "https://www.linkedin.com/in/rajan-lamba-750451289/"
+    )
+
+    return ApiResponse.successOk(res, "QR Code Uploaded Successfully!", {
+      url: qrCodeUrl,
+    })
+  } catch (error) {
+    return ApiResponse.fail(res, error.message)
+  }
+}
 
 export {
   createUser,

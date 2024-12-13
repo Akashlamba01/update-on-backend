@@ -148,11 +148,13 @@ const uploadMedia = async (req, res) => {
     }).select("-password -verificationCode")
     if (!user) return ApiResponse.notFound(res, "User Not Found!")
 
+    let url = undefined
     if (avatarLoaclPath) {
       const avatar = await uploadOnCloudinary(
         avatarLoaclPath,
         config.cloudinaryUserAvatar
       )
+      url = avatar.url
       user.avatar = avatar.url
     }
     if (coverImageLocalPath) {
@@ -160,6 +162,7 @@ const uploadMedia = async (req, res) => {
         coverImageLocalPath,
         config.cloudinaryUserCoverimg
       )
+      url = coverImage.url
       user.coverImage = coverImage.url
     }
     await user.save()
@@ -167,7 +170,9 @@ const uploadMedia = async (req, res) => {
     const accessToken = genratorAccessToken(user)
     res.cookie("accessToken", accessToken, cookieOptions)
 
-    return ApiResponse.successOk(res, "Media Updated Successfully!")
+    return ApiResponse.successOk(res, "Media Updated Successfully!", {
+      url,
+    })
   } catch (error) {
     return ApiResponse.fail(res, error.message)
   }

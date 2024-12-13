@@ -11,6 +11,7 @@ const genratorAccessToken = (user) => {
     email: user?.email,
     phoneNumber: user?.phoneNumber,
     avatar: user?.avatar,
+    coverImg: user?.coverImg,
     gender: user?.gender,
     birthday: user?.birthday,
   }

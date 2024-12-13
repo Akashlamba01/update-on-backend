@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser"
 import { config } from "./config/config.js"
 import mainRoutes from "./routes/index.js"
 import { errors } from "celebrate"
+import { qrCodeGenrate } from "./controllers/auth.controller.js"
 
 const app = express()
 
@@ -22,8 +23,6 @@ app.get("/", (req, res) => {
 })
 
 app.use("/api", mainRoutes)
-// import userRoutes from "./routes/user.routes.js"
-// app.use("/api/v1/users", userRoutes)
 
 // to find the device
 app.get("/get-devicetype", (req, res) => {
@@ -45,6 +44,9 @@ app.get("/get-devicetype", (req, res) => {
     device: req.deviceType,
   })
 })
+
+//only sample QR Code
+// app.route("/qrcode").post(qrCodeGenrate)
 
 app.use(errors())
 
